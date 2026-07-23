@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="tab-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B35" />
+      <stop offset="40%" stop-color="#E11D48" />
+      <stop offset="75%" stop-color="#9333EA" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+  </defs>
+  <path d="M 12 20 C 12 12, 20 8, 32 8 C 44 8, 52 12, 52 20 C 52 28, 44 32, 32 32 C 20 32, 12 36, 12 44 C 12 52, 20 56, 32 56 C 44 56, 52 52, 52 44" fill="none"/>
+  <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#tab-logo-grad)" />
+  <path d="M22 23C22 19.1 25.1 16 29 16H35C38.9 16 42 19.1 42 23C42 26.5 39.5 29.5 36 30.5L28 33.5C24.5 34.5 22 37.5 22 41C22 44.9 25.1 48 29 48H35C38.9 48 42 44.9 42 41" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
