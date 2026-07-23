@@ -21,35 +21,29 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
 
     try {
       const finalName = name.trim() || email.split("@")[0] || "User";
-
-      // Attempt Supabase Auth Sign-Up if credentials are set
-      if (import.meta.env.VITE_SUPABASE_URL && password) {
-        try {
-          const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { name: finalName },
-            },
-          });
-          if (error) {
-            console.warn("Supabase signup warning:", error.message);
-          }
-        } catch (supabaseErr) {
-          console.warn("Supabase connection skipped:", supabaseErr);
-        }
-      }
-
       saveCurrentUser({ name: finalName, email });
       toast.success("Workspace created successfully");
-      await navigate({ to: "/dashboard" });
+
+      if (import.meta.env.VITE_SUPABASE_URL && password) {
+        supabase.auth
+          .signUp({
+            email,
+            password,
+            options: { data: { name: finalName } },
+          })
+          .catch((err) => {
+            console.warn("Supabase signup warning:", err);
+          });
+      }
+
+      navigate({ to: "/dashboard" });
     } catch (err) {
       console.error("Signup error:", err);
       toast.error("Failed to create workspace. Please try again.");

@@ -1,30 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SocialSync — One dashboard for all your social media</title>
-    <meta name="description" content="Schedule, publish, and analyze posts across Instagram, X, and LinkedIn from a single premium workspace." />
-    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <meta charset="utf-8">
+    <title>SocialSync</title>
     <script type="text/javascript">
-      // SPA redirect fallback for GitHub Pages
+      // Single Page Apps for GitHub Pages
+      // MIT License https://github.com/rafgraph/spa-github-pages
       var pathSegmentsToKeep = 1;
       var l = window.location;
-      if (l.search[1] === '/' ) {
-        var decoded = l.search.slice(1).split('&').map(function(s) { 
-          return s.replace(/~and~/g, '&')
-        }).join('?');
-        window.history.replaceState(null, null,
-            l.pathname.slice(0, -1) + decoded + l.hash
-        );
-      }
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
     </script>
   </head>
-  <body class="bg-background text-foreground antialiased min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+  <body>
   </body>
 </html>

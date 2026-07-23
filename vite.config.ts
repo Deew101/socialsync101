@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
-  base: "./",
+  base: "/socialsync101/",
   plugins: [
     TanStackRouterVite({ autoCodeSplitting: true }),
     react(),
@@ -17,7 +17,3 @@ export default defineConfig({
     },
   },
 });
-
-
-
-

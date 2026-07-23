@@ -21,35 +21,23 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
 
     try {
       const finalName = name.trim() || email.split("@")[0] || "User";
-
-      // Attempt Supabase Auth if credentials are set
-      if (import.meta.env.VITE_SUPABASE_URL && password) {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (error && !error.message.includes("Invalid login credentials")) {
-            console.warn("Supabase auth warning:", error.message);
-          }
-        } catch (supabaseErr) {
-          console.warn("Supabase connection skipped:", supabaseErr);
-        }
-      }
-
-      // Save user profile state & notify
       const user = saveCurrentUser({ name: finalName, email });
       toast.success(`Signed in as ${user.name}`);
 
-      // Navigate to dashboard
-      await navigate({ to: "/dashboard" });
+      if (import.meta.env.VITE_SUPABASE_URL && password) {
+        supabase.auth.signInWithPassword({ email, password }).catch((err) => {
+          console.warn("Supabase auth warning:", err);
+        });
+      }
+
+      navigate({ to: "/dashboard" });
     } catch (err) {
       console.error("Login error:", err);
       toast.error("Sign in failed. Please try again.");
