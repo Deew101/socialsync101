@@ -17,7 +17,6 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,12 +26,11 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const finalName = name.trim() || email.split("@")[0] || "User";
-      const user = saveCurrentUser({ name: finalName, email });
+      let displayName = email.split("@")[0] || "User";
 
-      if (isSupabaseConfigured() && password) {
+      if (isSupabaseConfigured()) {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Supabase connection timed out")), 4000)
+          setTimeout(() => reject(new Error("Supabase connection timed out")), 5000)
         );
 
         try {
@@ -42,19 +40,24 @@ function LoginPage() {
           ])) as any;
 
           if (res?.error) {
-            console.warn("Supabase auth warning:", res.error.message);
-            toast.info(`Signed in as ${user.name}`);
-          } else {
-            toast.success(`Signed in as ${user.name}`);
+            console.warn("Supabase auth error:", res.error.message);
+            toast.error(`Login failed: ${res.error.message}`);
+            setLoading(false);
+            return;
+          } else if (res?.data?.user) {
+            displayName =
+              res.data.user.user_metadata?.name ||
+              res.data.user.user_metadata?.full_name ||
+              displayName;
           }
         } catch (err: any) {
-          console.warn("Supabase auth network issue:", err);
-          toast.info(`Signed in as ${user.name} (Offline mode)`);
+          console.warn("Supabase auth connection issue:", err);
+          toast.info("Offline mode login");
         }
-      } else {
-        toast.success(`Signed in as ${user.name}`);
       }
 
+      const user = saveCurrentUser({ name: displayName, email });
+      toast.success(`Welcome back, ${user.name}!`);
       await navigate({ to: "/dashboard" });
     } catch (err) {
       console.error("Login error:", err);
@@ -79,17 +82,7 @@ function LoginPage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email address</Label>
           <Input
             id="email"
             type="email"
