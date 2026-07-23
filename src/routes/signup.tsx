@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCurrentUser } from "@/hooks/use-current-user";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Create your workspace — SocialSync" }] }),
@@ -21,7 +21,7 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
@@ -29,21 +29,37 @@ function SignupPage() {
     try {
       const finalName = name.trim() || email.split("@")[0] || "User";
       saveCurrentUser({ name: finalName, email });
-      toast.success("Workspace created successfully");
 
-      if (import.meta.env.VITE_SUPABASE_URL && password) {
-        supabase.auth
-          .signUp({
-            email,
-            password,
-            options: { data: { name: finalName } },
-          })
-          .catch((err) => {
-            console.warn("Supabase signup warning:", err);
-          });
+      if (isSupabaseConfigured() && password) {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase connection timed out")), 4000)
+        );
+
+        try {
+          const res = (await Promise.race([
+            supabase.auth.signUp({
+              email,
+              password,
+              options: { data: { name: finalName } },
+            }),
+            timeoutPromise,
+          ])) as any;
+
+          if (res?.error) {
+            console.warn("Supabase signup warning:", res.error.message);
+            toast.info("Workspace created");
+          } else {
+            toast.success("Workspace created successfully");
+          }
+        } catch (err: any) {
+          console.warn("Supabase signup network issue:", err);
+          toast.info("Workspace created (Offline mode)");
+        }
+      } else {
+        toast.success("Workspace created successfully");
       }
 
-      navigate({ to: "/dashboard" });
+      await navigate({ to: "/dashboard" });
     } catch (err) {
       console.error("Signup error:", err);
       toast.error("Failed to create workspace. Please try again.");

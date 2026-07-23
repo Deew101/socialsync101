@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCurrentUser } from "@/hooks/use-current-user";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — SocialSync" }] }),
@@ -21,7 +21,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
@@ -29,15 +29,33 @@ function LoginPage() {
     try {
       const finalName = name.trim() || email.split("@")[0] || "User";
       const user = saveCurrentUser({ name: finalName, email });
-      toast.success(`Signed in as ${user.name}`);
 
-      if (import.meta.env.VITE_SUPABASE_URL && password) {
-        supabase.auth.signInWithPassword({ email, password }).catch((err) => {
-          console.warn("Supabase auth warning:", err);
-        });
+      if (isSupabaseConfigured() && password) {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase connection timed out")), 4000)
+        );
+
+        try {
+          const res = (await Promise.race([
+            supabase.auth.signInWithPassword({ email, password }),
+            timeoutPromise,
+          ])) as any;
+
+          if (res?.error) {
+            console.warn("Supabase auth warning:", res.error.message);
+            toast.info(`Signed in as ${user.name}`);
+          } else {
+            toast.success(`Signed in as ${user.name}`);
+          }
+        } catch (err: any) {
+          console.warn("Supabase auth network issue:", err);
+          toast.info(`Signed in as ${user.name} (Offline mode)`);
+        }
+      } else {
+        toast.success(`Signed in as ${user.name}`);
       }
 
-      navigate({ to: "/dashboard" });
+      await navigate({ to: "/dashboard" });
     } catch (err) {
       console.error("Login error:", err);
       toast.error("Sign in failed. Please try again.");
