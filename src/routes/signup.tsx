@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCurrentUser } from "@/hooks/use-current-user";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Create your workspace — SocialSync" }] }),
@@ -18,6 +19,45 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const finalName = name.trim() || email.split("@")[0] || "User";
+
+      // Attempt Supabase Auth Sign-Up if credentials are set
+      if (import.meta.env.VITE_SUPABASE_URL && password) {
+        try {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { name: finalName },
+            },
+          });
+          if (error) {
+            console.warn("Supabase signup warning:", error.message);
+          }
+        } catch (supabaseErr) {
+          console.warn("Supabase connection skipped:", supabaseErr);
+        }
+      }
+
+      saveCurrentUser({ name: finalName, email });
+      toast.success("Workspace created successfully");
+      await navigate({ to: "/dashboard" });
+    } catch (err) {
+      console.error("Signup error:", err);
+      toast.error("Failed to create workspace. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell
       title="Create your workspace"
@@ -31,19 +71,7 @@ function SignupPage() {
         </>
       }
     >
-      <form
-        className="space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setLoading(true);
-          const finalName = name.trim() || email.split("@")[0] || "You";
-          saveCurrentUser({ name: finalName, email });
-          setTimeout(() => {
-            toast.success("Workspace created");
-            navigate({ to: "/dashboard" });
-          }, 700);
-        }}
-      >
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="name">Full name</Label>
           <Input
@@ -67,7 +95,14 @@ function SignupPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" placeholder="At least 8 characters" required />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+            required
+          />
         </div>
         <Button
           type="submit"

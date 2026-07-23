@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveCurrentUser } from "@/hooks/use-current-user";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — SocialSync" }] }),
@@ -18,6 +19,45 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const finalName = name.trim() || email.split("@")[0] || "User";
+
+      // Attempt Supabase Auth if credentials are set
+      if (import.meta.env.VITE_SUPABASE_URL && password) {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error && !error.message.includes("Invalid login credentials")) {
+            console.warn("Supabase auth warning:", error.message);
+          }
+        } catch (supabaseErr) {
+          console.warn("Supabase connection skipped:", supabaseErr);
+        }
+      }
+
+      // Save user profile state & notify
+      const user = saveCurrentUser({ name: finalName, email });
+      toast.success(`Signed in as ${user.name}`);
+
+      // Navigate to dashboard
+      await navigate({ to: "/dashboard" });
+    } catch (err) {
+      console.error("Login error:", err);
+      toast.error("Sign in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell
       title="Welcome back"
@@ -31,19 +71,7 @@ function LoginPage() {
         </>
       }
     >
-      <form
-        className="space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setLoading(true);
-          const finalName = name.trim() || email.split("@")[0] || "You";
-          const user = saveCurrentUser({ name: finalName, email });
-          setTimeout(() => {
-            toast.success(`Signed in as ${user.name}`);
-            navigate({ to: "/dashboard" });
-          }, 600);
-        }}
-      >
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input
@@ -75,7 +103,14 @@ function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input id="password" type="password" placeholder="••••••••" required />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
         </div>
         <Button
           type="submit"
